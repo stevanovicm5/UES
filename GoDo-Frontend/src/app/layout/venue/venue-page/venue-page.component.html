@@ -1,0 +1,366 @@
+<div class="px-4 lg:px-8 mt-8">
+  <div *ngIf="this.isAdmin()" class="flex justify-content-end w-full my-3">
+    <button
+      class="font-bold bg-orange-400 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-orange-300"
+      (click)="switchToEdit()"
+    >
+      <i class="pi pi-pencil text-xl"></i>
+    </button>
+    <button
+      class="font-bold bg-red-600 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-red-400"
+      (click)="showDialog()"
+    >
+      <i class="pi pi-trash text-xl"></i>
+    </button>
+    <button
+      class="font-bold bg-primary p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-primary-300"
+      (click)="showVenueManagementDialog()"
+    >
+      <i class="pi pi-user-edit text-xl"></i>
+    </button>
+  </div>
+
+  <div *ngIf="this.isManager" class="flex justify-content-end w-full my-3">
+    <button
+      class="font-bold bg-orange-400 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-orange-300"
+      (click)="switchToEdit()"
+    >
+      <i class="pi pi-pencil text-xl"></i>
+    </button>
+    <button
+      class="font-bold bg-green-500 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-green-400"
+      [routerLink]="['/add-event', venue?.id]"
+    >
+      <i class="pi pi-calendar-plus text-xl"></i>
+    </button>
+  </div>
+
+  <div
+    *ngIf="!this.isManager && !this.isAdmin()"
+    class="flex justify-content-end w-full my-3"
+  >
+    <button
+      class="font-bold bg-blue-400 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-blue-300 flex align-items-center"
+      (click)="this.showReviewDialog()"
+    >
+      Add review <i class="ml-2 pi pi-comments text-xl"></i>
+    </button>
+  </div>
+  <form class="grid" [formGroup]="editVenueForm">
+    <div class="col-12 lg:col-5 flex align-items-center justify-content-center">
+      <img
+        src="{{ venue?.imagePath }}"
+        alt="Venue image"
+        class="w-full lg:w-30rem border-round-lg shadow-2"
+      />
+    </div>
+
+    <div class="col-12 lg:col-7 flex flex-column justify-content-center">
+      <div class="lg:pl-5">
+        <div
+          class="flex flex-column align-items-center lg:align-items-start gap-2"
+        >
+          <h1
+            class="text-6xl font-bold m-0 text-center lg:text-left"
+            *ngIf="!isEdit"
+          >
+            {{ venue?.name }}
+          </h1>
+          <p-floatlabel variant="in" class="my-2 w-full" *ngIf="isEdit">
+            <input
+              pInputText
+              id="nameField"
+              autocomplete="off"
+              type="text"
+              class="w-full"
+              formControlName="name"
+            />
+            <label for="nameField">Name</label>
+          </p-floatlabel>
+          <h2
+            class="text-2xl text-color-secondary font-normal m-0"
+            *ngIf="!isEdit"
+          >
+            {{ venue?.address }}
+          </h2>
+          <p-floatlabel variant="in" class="my-2 w-full" *ngIf="isEdit">
+            <input
+              pInputText
+              id="addressField"
+              autocomplete="off"
+              type="text"
+              class="w-full"
+              formControlName="address"
+            />
+            <label for="addressField">Address</label>
+          </p-floatlabel>
+          <div class="flex flex-column my-2 w-full" *ngIf="isEdit">
+            <span>Venue type:</span>
+            <p-select
+              optionLabel="name"
+              placeholder="Select venue type"
+              class="my-2"
+              formControlName="type"
+              pTooltip="Venue type must be selected"
+              [options]="VenueTypes"
+            />
+          </div>
+          <span
+            class="text-2xl"
+            [style.color]="venueTypeColor()"
+            *ngIf="!isEdit"
+            id="venueTypeLabel"
+            >{{ venueType }}</span
+          >
+        </div>
+
+        <p
+          class="mt-6 line-height-3 text-color-secondary text-center lg:text-left"
+          *ngIf="!isEdit"
+        >
+          {{ venue?.description }}
+        </p>
+        <div class="my-2 w-full" *ngIf="isEdit">
+          <span>Description:</span>
+          <textarea
+            rows="6"
+            pTextarea
+            style="resize: none"
+            class="w-full text-white bg-black-alpha-10 border-gray-600 my-2"
+            formControlName="description"
+            pTooltip="Description field can't be empty"
+          >
+          </textarea>
+        </div>
+        <p-button
+          (onClick)="discardChanges()"
+          class="font-bold mr-1"
+          *ngIf="isEdit"
+          severity="danger"
+          label="Cancel"
+        ></p-button>
+        <p-button
+          (onClick)="submitChanges()"
+          class="font-bold"
+          *ngIf="isEdit"
+          [disabled]="!this.editVenueForm.valid"
+          [loading]="isLoading"
+          severity="success"
+          >Submit</p-button
+        >
+      </div>
+    </div>
+    <div class="col-12 mt-7">
+      <div class="surface-card p-4 lg:p-5 border-round-lg shadow-2">
+        <div class="text-center mb-5">
+          <h2 class="text-4xl font-light m-0">Reviews</h2>
+        </div>
+
+        <div class="flex flex-column align-items-center">
+          <div class="flex align-items-center gap-3 mb-5" *ngIf="this.ratingOverview.reviewCount != 0">
+            <i
+              class="pi pi-star-fill text-yellow-500"
+              style="font-size: 2.5rem"
+            ></i>
+            <div>
+              <div class="text-4xl font-bold" *ngIf="this.ratingOverview?.averageRating">
+                {{ ratingOverview.averageRating | number : "1.1-1" }}
+              </div>
+              <div class="text-lg text-color-secondary">
+                ({{ ratingOverview.reviewCount }} reviews)
+              </div>
+            </div>
+          </div>
+
+          <div
+            *ngFor="let review of reviewList.slice(0, 1)"
+            class="w-full md:w-10 lg:w-8 mb-4"
+          >
+            <app-review-card [review]="review" [isManager]="this.isManager" [isReviewPage]="false"></app-review-card>
+          </div>
+
+          <div
+            *ngIf="!reviewList || reviewList.length === 0"
+            class="text-center p-3"
+          >
+            <i class="pi pi-comments text-4xl text-color-secondary mb-2"></i>
+            <p class="text-xl text-color-secondary">
+              There are currently no reviews for this venue.
+            </p>
+          </div>
+
+          <div class="mt-4" *ngIf="reviewList.length > 0">
+            <p-button
+              label="See All Reviews"
+              icon="pi pi-arrow-right"
+              iconPos="right"
+              styleClass="p-button-text"
+              [routerLink]="['/review/venue/', this.venue?.id]"
+            >
+            </p-button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="col-12 mt-7 flex justify-content-center align-items-center flex-column"
+    >
+      <span class="text-4xl font-light">Upcoming events</span>
+      <div
+        class="border-top-1 border-white-alpha-50 border-2 w-full my-2"
+      ></div>
+    </div>
+
+    <app-upcoming-event-card
+      *ngFor="let event of this.upcomingEvents"
+      [event]="event"
+      class="col-12"
+    ></app-upcoming-event-card>
+    <div
+      class="col-12 flex justify-content-center"
+      *ngIf="this.upcomingEvents.length == 0"
+    >
+      <span class="text-white text-2xl text-center"
+        >There are currently no upcoming events</span
+      >
+    </div>
+  </form>
+</div>
+
+<!-- Delete dialog -->
+<p-dialog
+  header="Delete Venue"
+  [modal]="true"
+  [(visible)]="isDeleteDialogVisible"
+  [style]="{ width: '25rem' }"
+  draggable="false"
+>
+  <div class="border-top-1 border-bottom-1 border-gray-600">
+    <p>
+      Are you sure you want to delete this venue? This action can't be undone!
+    </p>
+  </div>
+  <div class="mt-3 flex justify-content-end">
+    <p-button
+      severity="success"
+      class="mr-1 font-bold"
+      (onClick)="deleteVenue()"
+      >Confirm</p-button
+    >
+    <p-button severity="danger" class="font-bold" (onClick)="hideDialog()"
+      >Cancel</p-button
+    >
+  </div>
+</p-dialog>
+
+<!-- Manage venue managers dialog -->
+<p-dialog
+  header="Manage Venue Managers"
+  [modal]="true"
+  [(visible)]="isManagementDialogVisible"
+  [style]="{ width: '30rem' }"
+  [draggable]="false"
+>
+  <!-- Main Content Area -->
+  <div class="field">
+    <label for="venue-managers" class="font-semibold"
+      >Select Venue Managers</label
+    >
+    <p-multiSelect
+      id="venue-managers"
+      placeholder="Select Managers"
+      optionLabel="name"
+      [maxSelectedLabels]="5"
+      dataKey="id"
+      styleClass="w-full"
+      [(ngModel)]="selectedUsers"
+      virtualScroll="true"
+      appendTo="body"
+      [options]="this.managerOptions"
+      optionLabel="username"
+    >
+    </p-multiSelect>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      severity="danger"
+      icon="pi pi-times"
+      styleClass="p-button"
+      (click)="isManagementDialogVisible = false"
+    >
+    </p-button>
+    <p-button
+      label="Submit"
+      icon="pi pi-check"
+      (onClick)="submitManagerSelection()"
+    >
+    </p-button>
+  </ng-template>
+</p-dialog>
+
+<!-- Manage venue managers dialog -->
+<p-dialog
+  header="Rate venue event"
+  [modal]="true"
+  [(visible)]="this.isRateEventDialogVisible"
+  [style]="{ width: '30rem' }"
+  [draggable]="false"
+>
+  <!-- Main Content Area -->
+  <form
+    class="field flex justify-content-center flex-column"
+    [formGroup]="reviewForm"
+  >
+    <label for="select-event">Select event:</label>
+    <p-select
+      id="select-event"
+      [options]="this.reviewEventOptions"
+      optionLabel="name"
+      formControlName="event"
+    ></p-select>
+    <div class="flex justify-content-center flex-column align-items-center">
+      <label for="performance-rating" class="mt-5">Performance:</label>
+      <p-rating id="performance-rating" formControlName="performance" />
+
+      <label for="ambient-rating" class="mt-3">Ambient:</label>
+      <p-rating id="ambient-rating" formControlName="ambient" />
+
+      <label for="venue-rating" class="mt-3">Venue:</label>
+      <p-rating id="venue-rating" formControlName="venue" />
+
+      <label for="overall-rating" class="mt-3">Overall:</label>
+      <p-rating id="overall-rating" formControlName="overall" />
+    </div>
+    <label for="comment" class="mt-5"
+      >Feel free to tell us what you think:</label
+    >
+    <textarea
+      rows="10"
+      id="comment"
+      placeholder="(optional)"
+      formControlName="comment"
+    ></textarea>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <!-- <p-button
+      label="Cancel"
+      severity="danger"
+      icon="pi pi-times"
+      styleClass="p-button"
+      (click)="isManagementDialogVisible = false"
+          </p-button>
+        -->
+    <div class="flex justify-content-center align-items-center">
+      <p-button
+        label="Submit"
+        icon="pi pi-check"
+        (onClick)="submitReview()"
+        [disabled]="isReviewSubmitButtonDisabled()"
+      >
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>

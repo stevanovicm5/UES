@@ -1,0 +1,8 @@
+<app-header></app-header>
+<router-outlet></router-outlet>
+<app-footer *ngIf="!isLandingPage()"></app-footer>
+
+<p-toast
+  [position]="toastPositionService.getPosition()"
+  class="w-full"
+></p-toast>
