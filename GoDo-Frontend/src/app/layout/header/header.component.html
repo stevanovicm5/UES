@@ -1,6 +1,6 @@
 <!-- PC -->
 <div class="justify-content-between border-bottom-1 border-primary pt-2 pb-2 align-items-center px-3 fixed top-0 left-0 right-0 bg-black-alpha-90 hidden lg:flex z-5">
-    <span class="text-4xl text-primary">GoDo</span>
+    <a routerLink="/dashboard" class="text-4xl text-primary no-underline">GoDo</a>
     <div *ngIf="isLoggedIn() && !isPending()">
         <p-button [link]="true" styleClass="text-xl" [routerLink]="'/dashboard'">Dashboard</p-button>
         <p-button [link]="true" styleClass="text-xl" [routerLink]="'/event'">Events</p-button>
@@ -20,7 +20,7 @@
 <!-- MOBILE -->
 <div class="justify-content-between border-bottom-1 border-primary pt-2 pb-2 align-items-center px-3 fixed top-0 left-0 right-0 bg-black-alpha-90 lg:hidden flex z-5">
     <p-button (click)="toggleSideMenu()" icon="pi pi-bars" severity="primary" *ngIf="isLoggedIn()"></p-button>
-    <span class="text-4xl text-primary">GoDo</span>
+    <a routerLink="/dashboard" class="text-4xl text-primary no-underline">GoDo</a>
     <div class="flex justify-content-center align-items-center" *ngIf="!isLoggedIn()">
         <p-button styleClass="text-xl" (click)="openLoginModal()">Log in</p-button>
     </div>

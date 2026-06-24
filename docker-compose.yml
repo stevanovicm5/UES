@@ -21,6 +21,40 @@ services:
       - ${MAILHOG_PORT}:1025
       - ${MAILHOG_UI_PORT}:8025
 
+  minio:
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - 9000:9000
+      - 9001:9001
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.1
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   backend:
     build: ./GoDo
     ports:
@@ -31,12 +65,23 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       HOST_URL: backend
       SPRING_MAIL_HOST: ${MAIL_HOST}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET: ${MINIO_BUCKET}
       JWT_TTL: ${JWT_TTL}
       RT_TTL: ${RT_TTL}
     restart: always
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
 
   frontend:
     build: ./GoDo-Frontend
@@ -45,3 +90,6 @@ services:
 
 volumes:
   pgdata:
+  esdata:
+  minio-data:
+  uploads:
