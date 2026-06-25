@@ -21,11 +21,15 @@ public class ElasticsearchInitializer {
         try {
             log.info("Starting Elasticsearch initialization...");
 
-            // Delete and recreate index to ensure correct analyzer settings
-            indexService.deleteIndex();
-            indexService.createIndexIfNotExists();
-
-            syncService.indexAllVenues();
+            if (!indexService.indexExists()) {
+                // Index doesn't exist yet - create it with analyzer settings
+                // and load all venues from database
+                indexService.createIndexIfNotExists();
+                syncService.indexAllVenues();
+                log.info("Created new index and indexed all venues");
+            } else {
+                log.info("Elasticsearch index already exists, keeping existing data");
+            }
 
             log.info("Elasticsearch initialization completed successfully");
         } catch (Exception e) {

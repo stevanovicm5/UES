@@ -33,6 +33,9 @@ export class VenueSearchComponent implements OnInit {
   currentPage: number = 0;
   currentSortField: string = '';
   currentSortDir: string = 'asc';
+  isLoading: boolean = false;
+  hasSearched: boolean = false;
+  showTips: boolean = false;
 
   ratingCategories = [
     { name: 'Average Rating', value: 'average' },
@@ -104,15 +107,20 @@ export class VenueSearchComponent implements OnInit {
       this.currentSortDir = '';
     }
 
+    this.isLoading = true;
+    this.hasSearched = true;
+
     this.venueService
       .advancedSearch(params, this.currentPage, this.currentSortField, this.currentSortDir)
       .subscribe({
         next: (response) => {
           this.results = response.content;
           this.totalElements = response.totalElements;
+          this.isLoading = false;
         },
         error: (error) => {
           console.error('Search failed', error);
+          this.isLoading = false;
         },
       });
   }
@@ -138,6 +146,7 @@ export class VenueSearchComponent implements OnInit {
     });
     this.results = [];
     this.totalElements = 0;
+    this.hasSearched = false;
   }
 
   goToVenue(venueId: number) {
