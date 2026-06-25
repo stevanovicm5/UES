@@ -40,6 +40,11 @@ public class VenueElasticsearchSyncService {
                 venue.getName(), venue.getId());
     }
 
+    // Get an ES document by venue ID (used by download endpoint)
+    public VenueSearchDocument getDocumentById(Long venueId) {
+        return venueSearchRepository.findById(venueId).orElse(null);
+    }
+
     // Update only the PDF-related fields in an existing ES document
     // Called when a PDF is uploaded/replaced for an existing venue
     public void updatePdfContent(Long venueId, String pdfText, String pdfPath) {
