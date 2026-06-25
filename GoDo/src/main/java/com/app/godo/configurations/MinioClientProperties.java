@@ -7,5 +7,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class MinioClientProperties {
     private String endpoint;
+    private String publicUrl;
     private String bucket;
 }

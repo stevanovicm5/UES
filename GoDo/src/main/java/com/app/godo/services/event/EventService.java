@@ -15,7 +15,7 @@ import com.app.godo.models.Venue;
 import com.app.godo.repositories.event.EventRepository;
 import com.app.godo.repositories.image.ImageRepository;
 import com.app.godo.repositories.venue.VenueRepository;
-import com.app.godo.services.files.FileStorageService;
+import com.app.godo.services.files.MinIOService;
 import com.app.godo.specifications.EventSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +39,7 @@ import java.util.List;
 public class EventService {
     private final EventRepository eventRepository;
     private final VenueRepository venueRepository;
-    private final FileStorageService fileStorageService;
+    private final MinIOService minIOService;
 
     private final ObjectMapper objectMapper;
 
@@ -114,7 +114,8 @@ public class EventService {
             throw new NotFoundException(ex.getMessage());
         }
 
-        String path = "http://localhost:8080/uploads/" + fileStorageService.storeFile(image);
+        String imageFilename = minIOService.uploadFile(image);
+        String path = minIOService.getFileUrl(imageFilename);
 
         if (dto.isRecurrent()) {
             if (!eventRepository.findByRecurrentIsTrueAndName(dto.getName()).isEmpty()) {

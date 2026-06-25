@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 @RestController
@@ -126,16 +127,20 @@ public class VenueController {
     public ResponseEntity<String> uploadVenuePdf(
             @PathVariable Long id,
             @RequestPart("file") MultipartFile pdfFile
-    ) {
+    ) throws IOException {
         if (!pdfProcessingService.isValidPdf(pdfFile)) {
             return ResponseEntity.badRequest().body("File must be a valid PDF");
         }
 
-        // 1. Upload PDF to MinIO
-        String pdfFilename = minIOService.uploadFile(pdfFile);
+        // Read bytes ONCE - the InputStream can only be read once
+        byte[] pdfBytes = pdfFile.getBytes();
 
-        // 2. Extract text from PDF
-        String pdfText = pdfProcessingService.extractText(pdfFile);
+        // 1. Extract text from the bytes
+        String pdfText = pdfProcessingService.extractText(pdfBytes);
+
+        // 2. Upload PDF to MinIO using the bytes
+        String pdfFilename = minIOService.uploadFileFromBytes(
+                pdfBytes, pdfFile.getOriginalFilename(), pdfFile.getContentType());
 
         // 3. Update Elasticsearch index with PDF content and path
         String pdfUrl = minIOService.getFileUrl(pdfFilename);

@@ -26,7 +26,8 @@ public class MinioConfiguration {
     @Bean
     public MinioClientProperties minioProperties(
             @Value("${app.storage.minio.endpoint}") String endpoint,
+            @Value("${app.storage.minio.public-url}") String publicUrl,
             @Value("${app.storage.minio.bucket}") String bucket) {
-        return new MinioClientProperties(endpoint, bucket);
+        return new MinioClientProperties(endpoint, publicUrl, bucket);
     }
 }

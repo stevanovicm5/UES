@@ -18,6 +18,12 @@
     >
       <i class="pi pi-user-edit text-xl"></i>
     </button>
+    <button
+      class="font-bold bg-purple-500 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-purple-400"
+      (click)="showPdfUploadDialog()"
+    >
+      <i class="pi pi-file-pdf text-xl"></i>
+    </button>
   </div>
 
   <div *ngIf="this.isManager" class="flex justify-content-end w-full my-3">
@@ -32,6 +38,12 @@
       [routerLink]="['/add-event', venue?.id]"
     >
       <i class="pi pi-calendar-plus text-xl"></i>
+    </button>
+    <button
+      class="font-bold bg-purple-500 p-3 m-1 border-none border-round-md text-black-alpha-90 hover:bg-purple-400"
+      (click)="showPdfUploadDialog()"
+    >
+      <i class="pi pi-file-pdf text-xl"></i>
     </button>
   </div>
 
@@ -362,5 +374,42 @@
       >
       </p-button>
     </div>
+  </ng-template>
+</p-dialog>
+
+<!-- PDF Upload dialog -->
+<p-dialog
+  header="Upload Venue PDF"
+  [modal]="true"
+  [(visible)]="isPdfUploadDialogVisible"
+  [style]="{ width: '30rem' }"
+  draggable="false"
+>
+  <div class="flex flex-column gap-3">
+    <p class="text-secondary">Upload a PDF document with the venue description. The content will be searchable.</p>
+    <input
+      type="file"
+      accept=".pdf,application/pdf"
+      (change)="onPdfFileSelected($event)"
+      class="w-full"
+    />
+    <p *ngIf="selectedPdfFile" class="text-sm text-primary">
+      Selected: {{ selectedPdfFile.name }}
+    </p>
+  </div>
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancel"
+      severity="danger"
+      icon="pi pi-times"
+      (click)="isPdfUploadDialogVisible = false"
+    ></p-button>
+    <p-button
+      label="Upload"
+      icon="pi pi-upload"
+      (onClick)="uploadPdf()"
+      [disabled]="!selectedPdfFile"
+      [loading]="isPdfUploading"
+    ></p-button>
   </ng-template>
 </p-dialog>

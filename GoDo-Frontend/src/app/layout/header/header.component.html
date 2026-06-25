@@ -5,6 +5,7 @@
         <p-button [link]="true" styleClass="text-xl" [routerLink]="'/dashboard'">Dashboard</p-button>
         <p-button [link]="true" styleClass="text-xl" [routerLink]="'/event'">Events</p-button>
         <p-button [link]="true" styleClass="text-xl" [routerLink]="'/venue'">Venues</p-button>
+        <p-button [link]="true" styleClass="text-xl" [routerLink]="'/venue-search'">Search</p-button>
     </div>
     <div *ngIf="!isLoggedIn()"></div>
     <div #menuContainer class="flex justify-content-center align-items-center">
@@ -33,6 +34,7 @@
             <p-button [link]="true" styleClass="font-bold text-3xl" [routerLink]="'/dashboard'">Dashboard</p-button>
             <p-button [link]="true" styleClass="font-bold text-3xl" [routerLink]="'/event'">Events</p-button>
             <p-button [link]="true" styleClass="font-bold text-3xl" [routerLink]="'/venue'">Venues</p-button>
+            <p-button [link]="true" styleClass="font-bold text-3xl" [routerLink]="'/venue-search'">Search</p-button>
         </div>
         <div  *ngIf="isPending()">
 

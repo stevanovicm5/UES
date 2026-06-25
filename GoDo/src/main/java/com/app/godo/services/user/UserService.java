@@ -17,7 +17,7 @@ import com.app.godo.repositories.user.UserRepository;
 import com.app.godo.services.auth.AuthService;
 import com.app.godo.services.auth.JwtService;
 import com.app.godo.services.email.EmailService;
-import com.app.godo.services.files.FileStorageService;
+import com.app.godo.services.files.MinIOService;
 import com.app.godo.utils.Utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,7 +44,7 @@ public class UserService {
     private String hostUrl;
 
     private final UserRepository userRepository;
-    private final FileStorageService fileStorageService;
+    private final MinIOService minIOService;
     private final ImageRepository imageRepository;
     private final EmailService emailService;
 
@@ -78,7 +78,8 @@ public class UserService {
 
         Image image = imageRepository.findByProfileImageOf(user);
 
-        String path = hostUrl + "/uploads/" + fileStorageService.storeFile(userPfp);;
+        String imageFilename = minIOService.uploadFile(userPfp);
+        String path = minIOService.getFileUrl(imageFilename);
 
         user.setProfileImage(
                 Image.builder()
@@ -171,13 +172,15 @@ public class UserService {
         if (file != null) {
             Image oldImage = user.getProfileImage();
 
-            String path = hostUrl + "/uploads/" + fileStorageService.storeFile(file);
+            String imageFilename = minIOService.uploadFile(file);
+            String path = minIOService.getFileUrl(imageFilename);
 
             Image newImage = Image.builder().path(path).build();
             user.setProfileImage(newImage);
 
             if (oldImage != null) {
-                fileStorageService.delete(oldImage.getPath());
+                String oldFilename = oldImage.getPath().substring(oldImage.getPath().lastIndexOf('/') + 1);
+                minIOService.deleteFile(oldFilename);
             }
         }
 

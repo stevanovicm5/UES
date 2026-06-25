@@ -15,6 +15,7 @@ import { ManagementGuard } from './guards/management-guard';
 import { EventPageComponent } from './layout/event/event-page/event-page.component';
 import { ExploreEventPageComponent } from './layout/event/explore-event-page/explore-event-page.component';
 import { ReviewPageComponent } from './layout/review/review-page/review-page.component';
+import { VenueSearchComponent } from './layout/venue/venue-search/venue-search.component';
 
 export const routes: Routes = [
     {
@@ -93,6 +94,12 @@ export const routes: Routes = [
         title: 'Reviews',
         path: 'review/venue/:id',
         component: ReviewPageComponent,
+        canActivate: [AuthGuard, ProfileStatusGuard]
+    },
+    {
+        title: 'Search Venues',
+        path: 'venue-search',
+        component: VenueSearchComponent,
         canActivate: [AuthGuard, ProfileStatusGuard]
     }
 ];

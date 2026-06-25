@@ -12,7 +12,8 @@ import com.app.godo.models.Venue;
 import com.app.godo.repositories.event.EventRepository;
 import com.app.godo.repositories.venue.VenueRepository;
 import com.app.godo.services.event.EventService;
-import com.app.godo.services.files.FileStorageService;
+import com.app.godo.services.elasticsearch.VenueElasticsearchSyncService;
+import com.app.godo.services.files.MinIOService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -33,7 +34,8 @@ import java.util.List;
 public class VenueService {
     private final VenueRepository venueRepository;
     private final EventRepository eventRepository;
-    private final FileStorageService fileStorageService;
+    private final MinIOService minIOService;
+    private final VenueElasticsearchSyncService syncService;
     private final ObjectMapper objectMapper;
 
     private static final Logger logger = LogManager.getLogger(VenueService.class);
@@ -57,6 +59,10 @@ public class VenueService {
 
         if (existingVenue != null) { throw new ConflictException("A venue with the entered name already exists!"); }
 
+        // Upload image to MinIO
+        String imageFilename = minIOService.uploadFile(venueImage);
+        String imagePath = minIOService.getFileUrl(imageFilename);
+
         Venue venue = Venue.builder()
                 .name(venueRequest.getName())
                 .description(venueRequest.getDescription())
@@ -66,17 +72,18 @@ public class VenueService {
                 .createdAt(LocalDate.from(LocalDateTime.now()))
                 .build();
 
-        String path = "http://localhost:8080/uploads/" + fileStorageService.storeFile(venueImage);
-
         venue.setImage(
                 Image.builder()
                 .venueImageOf(venue)
-                .path(path).build()
+                .path(imagePath).build()
         );
 
-        venueRepository.save(venue);
+        Venue savedVenue = venueRepository.save(venue);
 
-        return VenueOverviewDto.fromEntity(venue);
+        // Index in Elasticsearch
+        syncService.indexVenue(savedVenue);
+
+        return VenueOverviewDto.fromEntity(savedVenue);
     }
 
     public VenueOverviewDto findVenueById(long venueId) {

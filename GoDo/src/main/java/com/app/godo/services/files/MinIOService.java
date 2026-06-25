@@ -38,6 +38,29 @@ public class MinIOService {
             } else {
                 log.info("MinIO bucket '{}' already exists", minioProperties.getBucket());
             }
+
+            // Set bucket policy to public so browser can load images directly
+            String policy = """
+                {
+                  "Version": "2012-10-17",
+                  "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Principal": "*",
+                      "Action": ["s3:GetObject"],
+                      "Resource": ["arn:aws:s3:::%s/*"]
+                    }
+                  ]
+                }
+                """.formatted(minioProperties.getBucket());
+
+            minioClient.setBucketPolicy(
+                    SetBucketPolicyArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .config(policy)
+                            .build()
+            );
+            log.info("Set public read policy on bucket: {}", minioProperties.getBucket());
         } catch (Exception e) {
             log.error("Failed to initialize MinIO bucket: {}", e.getMessage());
         }
@@ -54,6 +77,28 @@ public class MinIOService {
                             .object(uniqueFilename)
                             .stream(inputStream, file.getSize(), -1L)
                             .contentType(file.getContentType())
+                            .build()
+            );
+
+            log.info("Uploaded file '{}' to MinIO bucket '{}'", uniqueFilename, minioProperties.getBucket());
+            return uniqueFilename;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload file to MinIO: " + originalFilename, e);
+        }
+    }
+
+    // Upload from raw bytes (used when we already read the file into memory)
+    public String uploadFileFromBytes(byte[] fileBytes, String originalFilename, String contentType) {
+        String uniqueFilename = UUID.randomUUID() + "_" + originalFilename;
+
+        try (InputStream inputStream = new java.io.ByteArrayInputStream(fileBytes)) {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(minioProperties.getBucket())
+                            .object(uniqueFilename)
+                            .stream(inputStream, (long) fileBytes.length, -1L)
+                            .contentType(contentType)
                             .build()
             );
 
@@ -118,7 +163,7 @@ public class MinIOService {
     public String getFileUrl(String filename) {
         if (filename == null || filename.isBlank()) return null;
 
-        return minioProperties.getEndpoint() + "/"
+        return minioProperties.getPublicUrl() + "/"
                 + minioProperties.getBucket() + "/"
                 + filename;
     }

@@ -446,4 +446,42 @@ export class VenuePageComponent implements OnInit {
       severity: 'success',
     });
   }
+
+  // PDF upload
+  isPdfUploadDialogVisible: boolean = false;
+  selectedPdfFile: File | null = null;
+  isPdfUploading: boolean = false;
+
+  showPdfUploadDialog() {
+    this.selectedPdfFile = null;
+    this.isPdfUploadDialogVisible = true;
+  }
+
+  onPdfFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      this.selectedPdfFile = file;
+    } else {
+      this.selectedPdfFile = null;
+      this.showError('Please select a valid PDF file');
+    }
+  }
+
+  uploadPdf() {
+    if (!this.selectedPdfFile || !this.venue?.id) return;
+
+    this.isPdfUploading = true;
+    this.venueService.uploadVenuePdf(this.venue.id, this.selectedPdfFile).subscribe({
+      next: () => {
+        this.isPdfUploading = false;
+        this.isPdfUploadDialogVisible = false;
+        this.selectedPdfFile = null;
+        this.showSuccess('PDF uploaded and indexed successfully!');
+      },
+      error: (error) => {
+        this.isPdfUploading = false;
+        this.showError('Failed to upload PDF');
+      },
+    });
+  }
 }

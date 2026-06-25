@@ -21,6 +21,8 @@ public class ElasticsearchInitializer {
         try {
             log.info("Starting Elasticsearch initialization...");
 
+            // Delete and recreate index to ensure correct analyzer settings
+            indexService.deleteIndex();
             indexService.createIndexIfNotExists();
 
             syncService.indexAllVenues();

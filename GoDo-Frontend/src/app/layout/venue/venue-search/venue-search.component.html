@@ -1,0 +1,215 @@
+<div class="flex justify-content-center flex-column align-items-center mt-8 w-full px-3">
+  <h1 class="text-primary text-5xl">Search Venues</h1>
+
+  <!-- Search Syntax Help -->
+  <div class="border-1 border-gray-700 border-round p-3 mb-4 w-full lg:w-8 text-sm">
+    <span class="font-bold text-primary">Search tips: </span>
+    <span class="text-gray-400">
+      <code class="text-green-400">"Jazz Bar"</code> exact phrase &nbsp;&bull;&nbsp;
+      <code class="text-green-400">Jazz B*</code> starts with &nbsp;&bull;&nbsp;
+      <code class="text-green-400">~jazzt</code> fuzzy/typo-tolerant
+    </span>
+  </div>
+
+  <form
+    class="flex flex-column align-items-center w-full"
+    [formGroup]="searchForm"
+  >
+    <!-- Text Search Fields -->
+    <div class="grid w-full lg:w-8 gap-2 mb-3">
+      <div class="col-12 md:col">
+        <p-floatlabel class="w-full">
+          <input pInputText id="name" formControlName="name" class="w-full" />
+          <label for="name">Name</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col">
+        <p-floatlabel class="w-full">
+          <input pInputText id="description" formControlName="description" class="w-full" />
+          <label for="description">Description</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col">
+        <p-floatlabel class="w-full">
+          <input pInputText id="pdfDescription" formControlName="pdfDescription" class="w-full" />
+          <label for="pdfDescription">PDF content</label>
+        </p-floatlabel>
+      </div>
+    </div>
+
+    <!-- Review Count + Rating Range -->
+    <div class="grid w-full lg:w-8 gap-2 mb-3">
+      <div class="col-12 md:col-3">
+        <p-floatlabel class="w-full">
+          <p-inputNumber id="minReviews" formControlName="minReviews" class="w-full" [min]="0" />
+          <label for="minReviews">Min reviews</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col-3">
+        <p-floatlabel class="w-full">
+          <p-inputNumber id="maxReviews" formControlName="maxReviews" class="w-full" [min]="0" />
+          <label for="maxReviews">Max reviews</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col-2">
+        <p-floatlabel class="w-full">
+          <p-inputNumber id="minRating" formControlName="minRating" class="w-full" [min]="0" [max]="10" />
+          <label for="minRating">Min rating</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col-2">
+        <p-floatlabel class="w-full">
+          <p-inputNumber id="maxRating" formControlName="maxRating" class="w-full" [min]="0" [max]="10" />
+          <label for="maxRating">Max rating</label>
+        </p-floatlabel>
+      </div>
+      <div class="col-12 md:col-2">
+        <p-select
+          [options]="ratingCategories"
+          optionLabel="name"
+          formControlName="ratingCategory"
+          placeholder="Category"
+          class="w-full"
+        />
+      </div>
+    </div>
+
+    <!-- Operator + Sort + Buttons -->
+    <div class="grid w-full lg:w-8 gap-2 mb-4">
+      <div class="col-12 md:col-3">
+        <p-select
+          [options]="operators"
+          optionLabel="name"
+          formControlName="operator"
+          placeholder="Operator"
+          class="w-full"
+        />
+      </div>
+      <div class="col-12 md:col-3">
+        <p-select
+          [options]="sortOptions"
+          optionLabel="name"
+          formControlName="sort"
+          placeholder="Sort by"
+          class="w-full"
+        />
+      </div>
+      <div class="col-12 md:col flex gap-2 align-items-center">
+        <button
+          pButton
+          class="bg-primary border-none px-5 py-2 border-round font-bold flex-1"
+          (click)="search()"
+        >
+          <i class="pi pi-search mr-2"></i> Search
+        </button>
+        <button
+          pButton
+          class="bg-gray-700 border-none px-4 py-2 border-round font-bold"
+          (click)="clearForm()"
+        >
+          <i class="pi pi-times"></i>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Results Header -->
+  <div class="w-full lg:w-8 flex justify-content-between align-items-center mb-3" *ngIf="results.length > 0">
+    <span class="text-xl text-gray-400">
+      <span class="text-primary font-bold">{{ totalElements }}</span> venues found
+    </span>
+  </div>
+
+  <!-- Result Cards -->
+  <div class="grid w-full lg:w-8" *ngIf="results.length > 0">
+    <div *ngFor="let result of results" class="col-12 md:col-6 p-2">
+      <div
+        class="search-result-card border-2 border-gray-800 border-round-lg p-0 cursor-pointer hover:border-primary transition-all transition-duration-200 h-full flex flex-column"
+        (click)="goToVenue(result.id)"
+      >
+        <!-- Image -->
+        <div class="relative" *ngIf="result.imagePath">
+          <img
+            [src]="result.imagePath"
+            alt="{{ result.name }}"
+            class="w-full border-round-top-lg"
+            style="height: 180px; object-fit: cover;"
+            (error)="result.imagePath = null"
+          />
+          <!-- Rating Badge -->
+          <div class="absolute top-0 right-0 m-2 bg-black-alpha-70 border-round px-2 py-1 flex align-items-center gap-1">
+            <i class="pi pi-star-fill text-yellow-500 text-sm"></i>
+            <span class="text-white font-bold">{{ result.averageRating | number:'1.1-1' }}</span>
+          </div>
+          <!-- Type Badge -->
+          <div class="absolute bottom-0 left-0 m-2">
+            <span
+              class="border-round px-2 py-1 text-xs font-bold text-white"
+              [style.background-color]="getTypeColor(result.type)"
+            >
+              {{ getTypeName(result.type) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- No Image Fallback -->
+        <div
+          *ngIf="!result.imagePath"
+          class="w-full border-round-top-lg flex align-items-center justify-content-center bg-gray-900"
+          style="height: 180px;"
+        >
+          <i class="pi pi-image text-5xl text-gray-700"></i>
+        </div>
+
+        <!-- Content -->
+        <div class="p-3 flex flex-column flex-1">
+          <h3 class="m-0 mb-1 text-white text-lg">{{ result.name }}</h3>
+          <p class="text-sm text-gray-400 m-0 mb-2">
+            <i class="pi pi-map-marker text-xs mr-1"></i>{{ result.address }}
+          </p>
+          <p class="text-sm text-gray-300 m-0 mb-2 line-clamp">{{ result.description }}</p>
+
+          <!-- Highlights -->
+          <div *ngIf="result.highlights && result.highlights.length > 0" class="mb-2">
+            <div
+              *ngFor="let highlight of result.highlights.slice(0, 2)"
+              class="text-xs border-round p-1 mb-1 highlight-snippet"
+              [innerHTML]="highlight"
+            ></div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex justify-content-between align-items-center mt-auto pt-2 border-top-1 border-gray-800">
+            <span class="text-xs text-gray-500">
+              <i class="pi pi-comments mr-1"></i>{{ result.reviewCount }} reviews
+            </span>
+            <button
+              *ngIf="result.pdfPath"
+              pButton
+              class="p-button-sm bg-gray-800 border-none border-round text-gray-300 hover:bg-gray-700 px-2 py-1 text-xs"
+              (click)="downloadPdf(result.id, $event)"
+            >
+              <i class="pi pi-file-pdf mr-1 text-red-400"></i> Download PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paginator -->
+  <p-paginator
+    [first]="first"
+    [rows]="rows"
+    [totalRecords]="totalElements"
+    (onPageChange)="onPageChange($event)"
+    *ngIf="results.length > 0"
+    class="mt-3"
+  />
+
+  <!-- Empty State -->
+  <div class="flex flex-column align-items-center mt-6" *ngIf="results.length === 0 && totalElements === 0">
+    <i class="pi pi-search text-6xl text-gray-700 mb-3"></i>
+    <h2 class="text-gray-500 font-light m-0">Search for venues above</h2>
+  </div>
+</div>
