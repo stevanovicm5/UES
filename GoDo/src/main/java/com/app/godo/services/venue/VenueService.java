@@ -120,11 +120,29 @@ public class VenueService {
         Venue venue = venueRepository.findVenueById(venueId)
                 .orElseThrow(() -> new NotFoundException("The venue you were looking for can't be found"));
 
-
         if (!eventRepository.findByVenue(venue).isEmpty()) {
             throw new ConflictException("Venue can't be delete if events exist");
         }
 
+        // Delete image from MinIO
+        if (venue.getImage() != null && venue.getImage().getPath() != null) {
+            String imagePath = venue.getImage().getPath();
+            String imageFilename = imagePath.substring(imagePath.lastIndexOf('/') + 1);
+            minIOService.deleteFile(imageFilename);
+        }
+
+        // Delete PDF from MinIO (path stored in ES)
+        var esDoc = syncService.getDocumentById(venueId);
+        if (esDoc != null && esDoc.getPdfPath() != null) {
+            String pdfPath = esDoc.getPdfPath();
+            String pdfFilename = pdfPath.substring(pdfPath.lastIndexOf('/') + 1);
+            minIOService.deleteFile(pdfFilename);
+        }
+
+        // Remove from Elasticsearch index
+        syncService.deleteVenueFromIndex(venueId);
+
+        // Remove from database
         venueRepository.delete(venue);
     }
 
