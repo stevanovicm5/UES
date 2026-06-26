@@ -90,7 +90,16 @@ public class VenueService {
         Venue venue = venueRepository.findVenueById(venueId)
                 .orElseThrow(() -> new NotFoundException("The venue you were looking for can't be found"));
 
-        return VenueOverviewDto.fromEntity(venue);
+        VenueOverviewDto dto = VenueOverviewDto.fromEntity(venue);
+
+        // The PDF path lives only in Elasticsearch, not in the database.
+        // Fetch it so the venue page can show a download button.
+        var esDoc = syncService.getDocumentById(venueId);
+        if (esDoc != null) {
+            dto.setPdfPath(esDoc.getPdfPath());
+        }
+
+        return dto;
     }
 
     public UpdateVenueDto updateVenue(long venueId, UpdateVenueDto updateVenueDto) {

@@ -151,9 +151,11 @@
 
             <!-- Highlights -->
             <div *ngIf="result.highlights && result.highlights.length > 0" class="mb-2">
-              <div *ngFor="let highlight of result.highlights.slice(0, 2)"
-                   class="text-xs border-round p-1 mb-1 highlight-snippet"
-                   [innerHTML]="highlight"></div>
+              <div *ngFor="let highlight of result.highlights.slice(0, 3)"
+                   class="text-xs border-round p-1 mb-1 highlight-snippet flex align-items-start gap-2">
+                <span class="highlight-tag">{{ highlight.field }}</span>
+                <span class="flex-1" [innerHTML]="highlight.snippet"></span>
+              </div>
             </div>
 
             <!-- Footer -->

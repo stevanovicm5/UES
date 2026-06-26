@@ -4,6 +4,7 @@ import co.elastic.clients.elasticsearch._types.SortOrder;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.json.JsonData;
+import com.app.godo.dtos.search.SearchHighlightDto;
 import com.app.godo.dtos.search.VenueSearchQueryDto;
 import com.app.godo.dtos.search.VenueSearchResultDto;
 import com.app.godo.models.es.VenueSearchDocument;
@@ -206,11 +207,26 @@ public class VenueSearchService {
     private VenueSearchResultDto mapToResultDto(SearchHit<VenueSearchDocument> hit) {
         VenueSearchResultDto dto = VenueSearchResultDto.fromDocument(hit.getContent());
 
-        List<String> highlights = new ArrayList<>();
-        hit.getHighlightFields().forEach((field, snippets) -> highlights.addAll(snippets));
+        // Build highlight snippets WITH a label for which field matched.
+        // getHighlightFields() returns a map: field name -> list of snippets
+        List<SearchHighlightDto> highlights = new ArrayList<>();
+        hit.getHighlightFields().forEach((field, snippets) -> {
+            String label = friendlyFieldName(field);
+            snippets.forEach(snippet -> highlights.add(new SearchHighlightDto(label, snippet)));
+        });
         dto.setHighlights(highlights);
 
         return dto;
+    }
+
+    // Maps the internal Elasticsearch field name to a user-friendly label
+    private String friendlyFieldName(String field) {
+        return switch (field) {
+            case "name" -> "Name";
+            case "description" -> "Description";
+            case "pdfDescription" -> "PDF";
+            default -> field;
+        };
     }
 
     // ========== QUERY TYPE DETECTION ==========

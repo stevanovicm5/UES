@@ -5,5 +5,6 @@ export interface VenueOverviewDto {
     address: string,
     averageRating: number,
     type: string,
-    imagePath: string
+    imagePath: string,
+    pdfPath?: string
 }

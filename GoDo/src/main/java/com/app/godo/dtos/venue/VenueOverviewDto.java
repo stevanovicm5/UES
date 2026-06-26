@@ -17,6 +17,7 @@ public class VenueOverviewDto {
     private double averageRating;
     private VenueType type;
     private String imagePath;
+    private String pdfPath;
 
     public static VenueOverviewDto fromEntity(Venue venue) {
         return new VenueOverviewDto(
@@ -26,7 +27,8 @@ public class VenueOverviewDto {
                 venue.getAddress(),
                 venue.getAverageRating(),
                 venue.getType(),
-                venue.getImage().getPath()
+                venue.getImage().getPath(),
+                null
         );
     }
 }

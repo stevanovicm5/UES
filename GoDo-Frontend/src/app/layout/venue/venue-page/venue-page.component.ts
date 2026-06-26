@@ -476,11 +476,34 @@ export class VenuePageComponent implements OnInit {
         this.isPdfUploading = false;
         this.isPdfUploadDialogVisible = false;
         this.selectedPdfFile = null;
+        // Reflect the new PDF immediately so the download button appears
+        if (this.venue) {
+          this.venue.pdfPath = 'uploaded';
+        }
         this.showSuccess('PDF uploaded and indexed successfully!');
       },
       error: (error) => {
         this.isPdfUploading = false;
         this.showError('Failed to upload PDF');
+      },
+    });
+  }
+
+  // Download the venue's PDF brochure (available to all users)
+  downloadPdf() {
+    if (!this.venue?.id) return;
+
+    this.venueService.downloadVenuePdf(this.venue.id).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${this.venue?.name ?? 'venue'}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => {
+        this.showError('Failed to download PDF');
       },
     });
   }

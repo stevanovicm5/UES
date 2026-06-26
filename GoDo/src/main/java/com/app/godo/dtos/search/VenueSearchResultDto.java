@@ -24,7 +24,7 @@ public class VenueSearchResultDto {
     private String imagePath;
     private String pdfPath;
 
-    private List<String> highlights;
+    private List<SearchHighlightDto> highlights;
 
     public static VenueSearchResultDto fromDocument(VenueSearchDocument doc) {
         return VenueSearchResultDto.builder()
