@@ -14,6 +14,7 @@ import com.app.godo.repositories.review.ReviewRepository;
 import com.app.godo.repositories.user.UserRepository;
 import com.app.godo.repositories.venue.ManagesRepository;
 import com.app.godo.repositories.venue.VenueRepository;
+import com.app.godo.services.elasticsearch.VenueElasticsearchSyncService;
 import com.app.godo.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class ReviewService {
     private final VenueRepository venueRepository;
     private final EventRepository eventRepository;
     private final ManagesRepository managesRepository;
+    private final VenueElasticsearchSyncService venueElasticsearchSyncService;
 
     private final Utils utils;
 
@@ -145,6 +147,7 @@ public class ReviewService {
 
         logger.info("review has been created with the Id: {}", newReview.getId());
 
+        updateVenueRating(venue);
     }
 
     public List<ReviewOverviewDto> findReviewsByVenueId(long venueId) {
@@ -245,6 +248,8 @@ public class ReviewService {
         reviewRepository.save(review);
 
         logger.info("Manager '{}' successfully hid a review with the ID: {}", subject, reviewId);
+
+        updateVenueRating(review.getVenue());
     }
 
     public void deleteReview(long reviewId, String token) {
@@ -277,6 +282,8 @@ public class ReviewService {
         reviewRepository.save(review);
 
         logger.info("Manager '{}' successfully deleted a review with the ID: {}", subject, reviewId);
+
+        updateVenueRating(review.getVenue());
     }
 
     public List<ReviewOverviewDto> findReviewsByUser(String token) {
@@ -306,5 +313,26 @@ public class ReviewService {
                                 .findEventNumber(review.getEvent().getId(), review.getEvent().getName())
                         )
                 ).toList();
+    }
+
+    private void updateVenueRating(Venue venue) {
+        Venue freshVenue = venueRepository.findById(venue.getId()).orElse(venue);
+        List<Review> activeReviews = reviewRepository.findByVenueAndStatus(freshVenue, ReviewStatus.ACTIVE);
+
+        double avgRating = 0.0;
+        if (!activeReviews.isEmpty()) {
+            double sum = 0;
+            for (Review r : activeReviews) {
+                Rating rat = r.getRating();
+                sum += rat.getPerformance() + rat.getAmbient() + rat.getVenue() + rat.getOverallImpression();
+            }
+            avgRating = sum / (4.0 * activeReviews.size());
+        }
+
+        freshVenue.setAverageRating(avgRating);
+        venueRepository.save(freshVenue);
+
+        venueElasticsearchSyncService.indexVenue(freshVenue);
+        logger.info("Updated average rating ({}) and Elasticsearch index for venue ID: {}", avgRating, venue.getId());
     }
 }
