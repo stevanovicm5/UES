@@ -35,8 +35,6 @@ public class VenueController {
     private final MinIOService minIOService;
     private final PdfProcessingService pdfProcessingService;
 
-    // ========== EXISTING ENDPOINTS ==========
-
     @GetMapping
     public ResponseEntity<Page<VenueOverviewDto>> filterVenues(
             @RequestParam(value = "filter", defaultValue = "") String filter,
@@ -104,25 +102,11 @@ public class VenueController {
         return ResponseEntity.ok(venueSearchService.search(query, pageable));
     }
 
-    // "More Like This" - find similar venues
-    //
-    //   GET /api/venue/similar/5
-    //   → Returns venues similar to venue ID 5
     @GetMapping("/similar/{id}")
     public ResponseEntity<List<VenueSearchResultDto>> findSimilarVenues(@PathVariable Long id) {
         return ResponseEntity.ok(venueSearchService.moreLikeThis(id));
     }
 
-    // Upload a PDF document for a venue
-    //
-    //   POST /api/venue/3/pdf
-    //   Body: multipart/form-data with "file" = the PDF
-    //
-    // What happens:
-    //   1. Validates the file is a PDF
-    //   2. Uploads PDF to MinIO
-    //   3. Extracts text from PDF using PDFBox
-    //   4. Updates the Elasticsearch index with PDF content
     @PostMapping("/{id}/pdf")
     public ResponseEntity<String> uploadVenuePdf(
             @PathVariable Long id,
@@ -149,15 +133,6 @@ public class VenueController {
         return ResponseEntity.ok("PDF uploaded and indexed successfully");
     }
 
-    // Download the PDF document for a venue
-    //
-    //   GET /api/venue/3/pdf
-    //   → Returns the PDF file as a download
-    //
-    // How it works:
-    //   1. Find the venue's ES document to get the PDF filename
-    //   2. Download the file from MinIO
-    //   3. Return it as a file download response
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> downloadVenuePdf(@PathVariable Long id) {
         // 1. Find the venue's ES document to get the PDF path
@@ -167,8 +142,6 @@ public class VenueController {
         }
 
         // 2. Extract filename from the full URL
-        //    URL: "http://minio:9000/godo-files/abc123_info.pdf"
-        //    Filename: "abc123_info.pdf"
         String pdfUrl = document.getPdfPath();
         String filename = pdfUrl.substring(pdfUrl.lastIndexOf('/') + 1);
 
